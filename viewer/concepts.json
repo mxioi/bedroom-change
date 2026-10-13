@@ -1,0 +1,17 @@
+{
+  "D": {
+    "title": "Final layout",
+    "glb": "models/concept_D.glb",
+    "plan": "img/concept_D.png",
+    "dims": "img/concept_D_dimensions.png",
+    "step": "step/concept_D.step",
+    "notes": [
+      "Bed faces the TV; MITTZON by the window under the existing BERGSHULT shelf, with the BROR pegboard fitted between the shelf brackets.",
+      "Main-door corner: BILLY with drawer (80x30x106), pegboard and bins above it. Bathroom-door corner: LILLBERGET 5 drawers (470 mm to the bed - enough to open the drawers).",
+      "Racks: 20U under the TV, 6U beside it. BERGSHULT shelf height is assumed (top at 1500 mm)."
+    ],
+    "checks": [
+      "Under-bed boxes blocked by desk + chair (on castors - roll aside)"
+    ]
+  }
+}

@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bedroom Layout</title>
+<style>
+  :root {
+    --bg: #f6f4ef; --panel: #ffffff; --ink: #1f2328; --muted: #6b6f76;
+    --line: #e2ded5; --accent: #2f6fd0; --accent-ink: #ffffff; --warn: #b3261e; --ok: #1e7b34;
+    --viewport: #ebe7df;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16181b; --panel: #1f2226; --ink: #e8e6e1; --muted: #9aa0a8;
+      --line: #33373d; --accent: #6ea2f0; --accent-ink: #0b1220; --warn: #f2867c; --ok: #7bd389;
+      --viewport: #24272c;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #16181b; --panel: #1f2226; --ink: #e8e6e1; --muted: #9aa0a8;
+    --line: #33373d; --accent: #6ea2f0; --accent-ink: #0b1220; --warn: #f2867c; --ok: #7bd389;
+    --viewport: #24272c;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { padding: 20px 16px 8px; max-width: 1200px; margin: 0 auto; }
+  h1 { margin: 0; font-size: 1.5rem; letter-spacing: -0.01em; }
+  header p { margin: 4px 0 0; color: var(--muted); }
+  main { max-width: 1200px; margin: 0 auto; padding: 8px 16px 40px; }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0; }
+  .tabs button { border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+    padding: 7px 12px; border-radius: 999px; cursor: pointer; font: inherit; font-size: 0.9rem; }
+  .tabs button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  #viewport { position: relative; height: min(70vh, 640px); background: var(--viewport); touch-action: none; }
+  #viewport canvas { display: block; width: 100%; height: 100%; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 10px 14px;
+    border-top: 1px solid var(--line); font-size: 0.9rem; }
+  .toolbar label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+  .toolbar button { font: inherit; font-size: 0.85rem; padding: 5px 10px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; }
+  .toolbar button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  #hud { position: absolute; left: 12px; bottom: 12px; right: 12px; pointer-events: none;
+    display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+  #hud span { background: color-mix(in srgb, var(--panel) 92%, transparent); border: 1px solid var(--line);
+    padding: 5px 10px; border-radius: 8px; font-size: 0.85rem; }
+  #loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); }
+  .grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 16px; }
+  @media (min-width: 900px) { .grid { grid-template-columns: 1fr 1fr; } }
+  .card h2 { font-size: 1rem; margin: 0; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+  .card img { display: block; width: 100%; height: auto; background: #fff; }
+  .card .body { padding: 12px 14px; }
+  .checks { margin: 0; padding-left: 18px; }
+  .checks .ok { color: var(--ok); } .checks .bad { color: var(--warn); }
+  .notes p { margin: 0 0 8px; }
+  .downloads a { color: var(--accent); margin-right: 14px; }
+  footer { color: var(--muted); font-size: 0.85rem; max-width: 1200px; margin: 0 auto; padding: 0 16px 30px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Bedroom Layout</h1>
+  <p>3D model, plans and measurements. Drag to orbit, scroll or pinch to zoom, right-drag to pan.</p>
+</header>
+<main>
+  <div class="tabs" id="tabs" role="group" aria-label="Concept"></div>
+
+  <section class="card">
+    <div id="viewport"><div id="loading">Loading model…</div><div id="hud"></div></div>
+    <div class="toolbar">
+      <label><input type="checkbox" id="walls" checked> Walls</label>
+      <label><input type="checkbox" id="frontwalls"> Front &amp; right walls</label>
+      <button id="measure" type="button">📏 Measure</button>
+      <button id="top" type="button">Top view</button>
+      <button id="iso" type="button">3D view</button>
+      <span id="hint" style="color:var(--muted)">Click any object to see its name and size.</span>
+    </div>
+  </section>
+
+  <div class="grid">
+    <section class="card"><h2>Plan</h2><img id="plan" alt="Floor plan of the selected concept"></section>
+    <section class="card"><h2>Measurements (mm)</h2><img id="dims" alt="Dimensioned plan of the selected concept"></section>
+  </div>
+  <div class="grid">
+    <section class="card"><h2>About this layout</h2><div class="body notes" id="notes"></div></section>
+    <section class="card"><h2>Checks &amp; downloads</h2>
+      <div class="body"><ul class="checks" id="checks"></ul>
+        <p class="downloads" id="downloads"></p></div></section>
+  </div>
+</main>
+<footer>All sizes in mm. Assumed: walls 100 mm thick, ceiling 2400 mm, left wall at the origin of “Room layout.step”.</footer>
+
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three/build/three.module.js",
+  "three/addons/": "./vendor/three/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+const CONCEPTS = await (await fetch("concepts.json")).json();
+const order = Object.keys(CONCEPTS);
+let current = new URLSearchParams(location.search).get("c") || order[order.length - 1];
+
+// ---------- UI
+const tabs = document.getElementById("tabs");
+for (const k of order) {
+  const b = document.createElement("button");
+  b.type = "button"; b.textContent = `${k}: ${CONCEPTS[k].title}`; b.dataset.k = k;
+  b.onclick = () => select(k);
+  tabs.append(b);
+}
+
+// ---------- three
+const vp = document.getElementById("viewport");
+const hud = document.getElementById("hud");
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+vp.append(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 1, 10, 50000);
+camera.up.set(0, 1, 0);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+scene.add(new THREE.HemisphereLight(0xffffff, 0xb0aca4, 1.6));
+const sun = new THREE.DirectionalLight(0xffffff, 1.4); sun.position.set(4000, 7000, 3000); scene.add(sun);
+const fill = new THREE.DirectionalLight(0xffffff, 0.5); fill.position.set(-3000, 3000, -4000); scene.add(fill);
+
+// model is in mm, Z-up rotated to Y-up by the exporter: room x -> x, room y -> -z, room z -> y
+const CENTER = new THREE.Vector3(1702, 1000, -1575);
+let model = null, wallMeshes = [], frontWallParts = [];
+
+function resize() {
+  const w = vp.clientWidth, h = vp.clientHeight;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(vp);
+
+function view(kind) {
+  controls.target.copy(CENTER);
+  if (kind === "top") camera.position.set(1702, 7600, -1574);
+  else camera.position.set(5600, 4300, 2600);
+  controls.update();
+}
+document.getElementById("top").onclick = () => view("top");
+document.getElementById("iso").onclick = () => view("iso");
+
+// walls: translucent; the front and right walls (nearest the default
+// camera) are hidden unless ticked
+const wallsBox = document.getElementById("walls");
+const frontBox = document.getElementById("frontwalls");
+function applyWalls() {
+  for (const m of wallMeshes) m.visible = wallsBox.checked;
+  for (const p of frontWallParts) p.visible = wallsBox.checked && frontBox.checked;
+}
+wallsBox.onchange = applyWalls; frontBox.onchange = applyWalls;
+
+const loader = new GLTFLoader();
+async function load(k) {
+  document.getElementById("loading").style.display = "grid";
+  const gltf = await loader.loadAsync(CONCEPTS[k].glb);
+  if (model) scene.remove(model);
+  model = gltf.scene; wallMeshes = []; frontWallParts = [];
+  model.traverse(o => {
+    if (!o.isMesh) return;
+    const nm = (o.parent?.name || "") + "/" + o.name;
+    o.material = o.material.clone();
+    o.material.metalness = 0; o.material.roughness = 0.85;
+    if (/room_walls_(left|front|right|window)/.test(nm)) {
+      o.material.transparent = true; o.material.opacity = 0.35; o.material.depthWrite = false;
+      o.material.side = THREE.DoubleSide; o.renderOrder = 10;
+      (/room_walls_(front|right)/.test(nm) ? frontWallParts : wallMeshes).push(o);
+    }
+    if (/existing_room/.test(nm)) o.material.side = THREE.DoubleSide;
+  });
+  scene.add(model);
+  // edges for crispness
+  model.traverse(o => {
+    if (o.isMesh && !wallMeshes.includes(o)) {
+      const e = new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry, 30),
+        new THREE.LineBasicMaterial({ color: 0x222222, transparent: true, opacity: 0.35 }));
+      o.add(e);
+    }
+  });
+  applyWalls();
+  document.getElementById("loading").style.display = "none";
+}
+
+// ---------- picking + measuring
+const ray = new THREE.Raycaster(); const ptr = new THREE.Vector2();
+let measuring = false, pts = [], markers = [];
+const mBtn = document.getElementById("measure");
+mBtn.onclick = () => {
+  measuring = !measuring; mBtn.classList.toggle("on", measuring); clearMeasure();
+  document.getElementById("hint").textContent = measuring
+    ? "Click two points on any surface (walls included) to measure between them."
+    : "Click any object to see its name and size.";
+};
+function clearMeasure() { for (const m of markers) scene.remove(m); markers = []; pts = []; }
+function prettyName(o) {
+  let n = o; while (n && !/^\d\d_|existing_room|room_walls|Rack_/.test(n.name || "")) n = n.parent;
+  const raw = (n?.name || o.name || "object");
+  return raw.replace(/^\d\d_/, "").replace(/_\d+$/, "").replace(/__+/g, " ").replace(/_/g, " ").trim();
+}
+let downAt = null;
+renderer.domElement.addEventListener("pointerdown", e => { downAt = [e.clientX, e.clientY]; });
+renderer.domElement.addEventListener("pointerup", e => {
+  if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 5 || !model) return;
+  const r = renderer.domElement.getBoundingClientRect();
+  ptr.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ptr, camera);
+  const hits = ray.intersectObject(model, true).filter(h => h.object.isMesh && h.object.visible);
+  if (!hits.length) return;
+  const h = hits[0];
+  if (measuring) {
+    pts.push(h.point.clone());
+    const dot = new THREE.Mesh(new THREE.SphereGeometry(18), new THREE.MeshBasicMaterial({ color: 0xe53935 }));
+    dot.position.copy(h.point); scene.add(dot); markers.push(dot);
+    if (pts.length === 2) {
+      const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
+        new THREE.LineBasicMaterial({ color: 0xe53935 }));
+      scene.add(line); markers.push(line);
+      const d = pts[0].distanceTo(pts[1]);
+      const dx = Math.abs(pts[0].x - pts[1].x), dy = Math.abs(pts[0].z - pts[1].z), dz = Math.abs(pts[0].y - pts[1].y);
+      hud.innerHTML = `<span>📏 ${d.toFixed(0)} mm &nbsp;(across ${dx.toFixed(0)}, deep ${dy.toFixed(0)}, height ${dz.toFixed(0)})</span>`;
+      pts = [];
+      setTimeout(() => { if (markers.length >= 3) { /* keep last measurement until next click */ } }, 0);
+    } else {
+      if (markers.length > 1) { for (const m of markers.slice(0, -1)) scene.remove(m); markers = markers.slice(-1); }
+      hud.innerHTML = `<span>First point set - click the second point</span>`;
+    }
+    return;
+  }
+  const box = new THREE.Box3().setFromObject(h.object.parent?.type === "Group" || h.object.parent?.type === "Object3D" ? h.object.parent : h.object);
+  const s = box.getSize(new THREE.Vector3());
+  hud.innerHTML = `<span><b>${prettyName(h.object)}</b> - ${s.x.toFixed(0)} × ${s.z.toFixed(0)} × ${s.y.toFixed(0)} mm (w × d × h), `
+    + `${box.min.y.toFixed(0)}-${box.max.y.toFixed(0)} mm off floor</span>`;
+});
+
+function loop() { controls.update(); renderer.render(scene, camera); requestAnimationFrame(loop); }
+
+// ---------- select concept
+async function select(k) {
+  current = k;
+  for (const b of tabs.children) b.setAttribute("aria-pressed", String(b.dataset.k === k));
+  const c = CONCEPTS[k];
+  document.getElementById("plan").src = c.plan;
+  document.getElementById("dims").src = c.dims;
+  document.getElementById("notes").innerHTML = c.notes.map(p => `<p>${p}</p>`).join("");
+  document.getElementById("checks").innerHTML = c.checks.length
+    ? c.checks.map(x => `<li class="bad">${x}</li>`).join("") : `<li class="ok">All clearance checks pass</li>`;
+  document.getElementById("downloads").innerHTML =
+    `<a href="${c.step}" download>Download STEP (open in Fusion)</a><a href="${c.glb}" download>Download GLB</a>`;
+  hud.innerHTML = ""; clearMeasure();
+  history.replaceState(null, "", `?c=${k}`);
+  await load(k);
+}
+
+resize(); view("iso"); loop();
+select(order.includes(current) ? current : order[order.length - 1]);
+</script>
+</body>
+</html>
